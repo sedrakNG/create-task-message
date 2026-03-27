@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Task</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 24px;
+      max-width: 520px;
+    }
+
+    h2 {
+      margin-bottom: 16px;
+    }
+
+    .field {
+      margin-bottom: 12px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    input,
+    select,
+    button,
+    textarea {
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+
+    button {
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    .message {
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    #outputJson {
+      margin-top: 12px;
+      min-height: 260px;
+      font-family: Consolas, monospace;
+    }
+  </style>
+</head>
+<body>
+  <h2>Create Task</h2>
+
+  <form id="taskForm">
+    <div class="field">
+      <label for="procedureId">Procedure ID</label>
+      <input id="procedureId" type="text" placeholder="Enter procedureId" required />
+    </div>
+
+    <div class="field">
+      <label for="tenantSelect">Tenant ID (Dropdown)</label>
+      <select id="tenantSelect">
+        <option value="">-- Select tenantId --</option>
+        <option value="11111111-1111-1111-1111-111111111111">tenant A</option>
+        <option value="22222222-2222-2222-2222-222222222222">tenant B</option>
+        <option value="33333333-3333-3333-3333-333333333333">tenant C</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="customTenantId">Custom Tenant ID (Optional)</label>
+      <input id="customTenantId" type="text" placeholder="Enter custom tenantId if needed" />
+    </div>
+
+    <button type="submit">Create Task</button>
+    <div class="message" id="statusMessage"></div>
+  </form>
+  <textarea id="outputJson" readonly placeholder="Generated payload will appear here..."></textarea>
+  <button id="copyBtn" type="button">Copy Message</button>
+
+  <script>
+    function createTask(procedureId, tenantId) {
+      const correlationId = "b764b46f-9ee1-43fd-850e-5e7e0ff4e669";
+      const eventOccurrenceId = "b764b46f-9ee1-43fd-850e-5e7e0ff4e679";
+
+      const payload = {
+        payload: {
+          procedureId: procedureId,
+          triggerType: "ProcedureActivation",
+          isProcedureInstanceTrigger: true
+        },
+        tenantId: tenantId,
+        masterTenantId: "22222222-2222-2222-2222-222222222222",
+        correlationId: correlationId
+      };
+
+      const requestBody = {
+        messageId: "6c070000-8f82-900d-6ff8-08de6d4c7c0f",
+        requestId: null,
+        correlationId: "b764b46f-9ee1-43fd-850e-5e7e0ff4e679",
+        conversationId: "6c070000-8f82-900d-715f-08de6d4c7c0f",
+        initiatorId: null,
+        sourceAddress: "sb://cisomate-dev-servicebuss.servicebus.windows.net/CMEventsMS_bus",
+        destinationAddress: "sb://cisomate-dev-servicebuss.servicebus.windows.net/orchestration.requests",
+        responseAddress: null,
+        faultAddress: null,
+        messageType: [
+          "urn:message:CISOMate.Dtos.Dtos.CMEvents:InternalOrchestrationRequestDto"
+        ],
+        message: {
+          tenantId: tenantId,
+          masterTenantId: "22222222-2222-2222-2222-222222222222",
+          correlationId: correlationId,
+          workflowName: "CMTaskAutoManagerWorkflow",
+          inputParamsJson: JSON.stringify(payload),
+          eventOccurrenceId: eventOccurrenceId
+        },
+        expirationTime: null,
+        sentTime: "2026-02-17T10:00:00.0000000Z",
+        headers: {},
+        host: {
+          machineName: "d8098a504353",
+          processName: "CMEventsMS",
+          processId: 1868,
+          assembly: "CMEventsMS",
+          assemblyVersion: "1.0.0.0",
+          frameworkVersion: "9.0.12",
+          massTransitVersion: "8.5.3.0",
+          operatingSystemVersion: "Unix 6.6.119.3"
+        }
+      };
+
+      return JSON.stringify(requestBody, null, 2);
+    }
+
+    const taskForm = document.getElementById("taskForm");
+    const procedureIdInput = document.getElementById("procedureId");
+    const tenantSelect = document.getElementById("tenantSelect");
+    const customTenantIdInput = document.getElementById("customTenantId");
+    const statusMessage = document.getElementById("statusMessage");
+    const outputJson = document.getElementById("outputJson");
+    const copyBtn = document.getElementById("copyBtn");
+
+    taskForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      const procedureId = procedureIdInput.value.trim();
+      const selectedTenantId = tenantSelect.value.trim();
+      const customTenantId = customTenantIdInput.value.trim();
+      const tenantId = customTenantId || selectedTenantId;
+
+      if (!procedureId) {
+        statusMessage.textContent = "Please enter procedureId.";
+        return;
+      }
+
+      if (!tenantId) {
+        statusMessage.textContent = "Please select a tenantId or enter a custom tenantId.";
+        return;
+      }
+
+      statusMessage.textContent = "Creating task...";
+      outputJson.value = createTask(procedureId, tenantId);
+      statusMessage.textContent = "Task payload generated successfully.";
+    });
+
+    copyBtn.addEventListener("click", async function () {
+      if (!outputJson.value.trim()) {
+        statusMessage.textContent = "Nothing to copy. Generate message first.";
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(outputJson.value);
+        statusMessage.textContent = "Message copied to clipboard.";
+      } catch (error) {
+        statusMessage.textContent = "Copy failed. Please copy manually.";
+      }
+    });
+  </script>
+</body>
+</html>
